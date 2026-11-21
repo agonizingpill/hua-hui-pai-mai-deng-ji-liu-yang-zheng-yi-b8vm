@@ -1,10 +1,11 @@
-from sqlalchemy import select,func
+from sqlalchemy import select,func,text
 from .db import Base,engine,Session
 from .models import *
 from .auth import hashed
 
 def seed():
     Base.metadata.create_all(engine)
+    with engine.begin()as c:c.execute(text('ALTER TABLE vase_samples ADD COLUMN IF NOT EXISTS estimate_epoch INTEGER NOT NULL DEFAULT 0'))
     with Session()as s:
         for role in ('operator','supervisor','viewer'):
             if not s.scalar(select(User.id).where(User.email==role+'@chenlu.demo')):s.add(User(email=role+'@chenlu.demo',password_hash=hashed('Flowers2026!'),role=role))
@@ -22,4 +23,4 @@ def seed():
         deal=s.scalar(select(Deal).where(Deal.lot_id==lot.id))
         if not deal:deal=Deal(lot_id=lot.id,bid_id=bid.id,buyer=bid.buyer,crates=2,unit_cents=10000,original_grade='A',effective_grade='A',revision=1,at='2026-11-18T07:50:00');s.add(deal);s.flush()
         if not s.scalar(select(Dispute.id).where(Dispute.deal_id==deal.id)):s.add(Dispute(deal_id=deal.id,reason='历史留样仅6天，买方请求按留样复判',state='opened',sample_snapshot={c.name:getattr(sample,c.name)for c in sample.__table__.columns}))
-        s.commit();return {m.__tablename__:s.scalar(select(func.count()).select_from(m))for m in (User,Consignment,VaseSample,AuctionSession,AuctionLot,Bid,Deal,Dispute,Settlement)}
+        s.commit();return {m.__tablename__:s.scalar(select(func.count()).select_from(m))for m in (User,Consignment,VaseSample,AuctionSession,AuctionLot,Bid,Deal,Dispute,Settlement,SwapReview)}

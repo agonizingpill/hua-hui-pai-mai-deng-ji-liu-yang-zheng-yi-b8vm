@@ -1,6 +1,6 @@
 from sqlalchemy import Column,Integer,String,Float,Boolean,ForeignKey,JSON,UniqueConstraint,CheckConstraint
 from .db import Base
-from .constants import SAMPLE_STATES,LOT_STATES
+from .constants import SAMPLE_STATES,LOT_STATES,SWAP_STATES
 class User(Base):
     __tablename__='users'
     id=Column(Integer,primary_key=True);email=Column(String(100),unique=True,nullable=False);password_hash=Column(String(220),nullable=False);role=Column(String(30),nullable=False)
@@ -16,7 +16,7 @@ class Consignment(Base):
     __table_args__=(CheckConstraint('crates>0 AND stems_per_crate>0'),)
 class VaseSample(Base):
     __tablename__='vase_samples'
-    id=Column(Integer,primary_key=True);consignment_id=Column(Integer,ForeignKey('consignments.id'),nullable=False);code=Column(String(60),unique=True,nullable=False);maturity=Column(Float,nullable=False);stem_cm=Column(Float,nullable=False);cold_hours=Column(Float,nullable=False);observed_days=Column(Float,nullable=True);state=Column(String(20),default=SAMPLE_STATES[0]);prediction=Column(JSON);error=Column(String(450));approved_grade=Column(String(2));review_note=Column(String(250))
+    id=Column(Integer,primary_key=True);consignment_id=Column(Integer,ForeignKey('consignments.id'),nullable=False);code=Column(String(60),unique=True,nullable=False);maturity=Column(Float,nullable=False);stem_cm=Column(Float,nullable=False);cold_hours=Column(Float,nullable=False);observed_days=Column(Float,nullable=True);state=Column(String(20),default=SAMPLE_STATES[0]);prediction=Column(JSON);error=Column(String(450));approved_grade=Column(String(2));review_note=Column(String(250));estimate_epoch=Column(Integer,nullable=False,default=0)
 class AuctionSession(Base):
     __tablename__='auction_sessions'
     id=Column(Integer,primary_key=True);code=Column(String(60),unique=True,nullable=False);opens_at=Column(String(20),nullable=False);closes_at=Column(String(20),nullable=False)
@@ -37,3 +37,6 @@ class Settlement(Base):
     __tablename__='settlements'
     id=Column(Integer,primary_key=True);deal_id=Column(Integer,ForeignKey('deals.id'),nullable=False);revision=Column(Integer,nullable=False);kind=Column(String(20),nullable=False);gross_cents=Column(Integer,nullable=False);commission_cents=Column(Integer,nullable=False);target_cents=Column(Integer,nullable=False);delta_cents=Column(Integer,nullable=False);state=Column(String(20),default='draft');snapshot=Column(JSON);receipt=Column(String(80))
     __table_args__=(UniqueConstraint('deal_id','revision'),)
+class SwapReview(Base):
+    __tablename__='swap_reviews'
+    id=Column(Integer,primary_key=True);code=Column(String(60),unique=True,nullable=False);sample_a_id=Column(Integer,ForeignKey('vase_samples.id'),nullable=False);sample_b_id=Column(Integer,ForeignKey('vase_samples.id'),nullable=False);consignment_a_id=Column(Integer,ForeignKey('consignments.id'),nullable=False);consignment_b_id=Column(Integer,ForeignKey('consignments.id'),nullable=False);estimates=Column(JSON);verdict=Column(String(20),nullable=False);state=Column(String(20),default=SWAP_STATES[0]);note=Column(String(250),default='');archive=Column(JSON)
